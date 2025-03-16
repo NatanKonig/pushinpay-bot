@@ -1,0 +1,24 @@
+[project]
+name = "pushinpay-bot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "convopyro>=0.5",
+    "kurigram>=2.1.39",
+    "loguru>=0.7.3",
+    "pillow>=11.1.0",
+    "pydantic>=2.10.6",
+    "pydantic-settings>=2.8.1",
+    "qrcode>=8.0",
+    "requests>=2.32.3",
+    "tgcrypto>=1.2.5",
+    "uvloop>=0.21.0",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "isort>=6.0.1",
+]
