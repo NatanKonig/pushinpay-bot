@@ -72,7 +72,6 @@ class TransactionManager:
     """Gerencia as transações do bot em memória"""
     
     _transactions = {}  # Dict[transaction_id, Transaction]
-    _user_transactions = {}  # Dict[user_id, List[transaction_id]]
     
     @classmethod
     def add_transaction(cls, transaction: Transaction) -> None:
@@ -83,12 +82,6 @@ class TransactionManager:
             transaction: Instância de Transaction
         """
         cls._transactions[transaction.id] = transaction
-        
-        # Adiciona à lista de transações do usuário
-        if transaction.user_id not in cls._user_transactions:
-            cls._user_transactions[transaction.user_id] = []
-            
-        cls._user_transactions[transaction.user_id].append(transaction.id)
         logger.debug(f"Nova transação adicionada: {transaction.id} para usuário {transaction.user_id}")
     
     @classmethod
@@ -106,22 +99,6 @@ class TransactionManager:
         if not transaction:
             logger.warning(f"Transação não encontrada: {transaction_id}")
         return transaction
-    
-    @classmethod
-    def get_user_transactions(cls, user_id: int) -> List[Transaction]:
-        """
-        Obtém todas as transações de um usuário
-        
-        Args:
-            user_id: ID do usuário no Telegram
-            
-        Returns:
-            Lista de instâncias de Transaction
-        """
-        transaction_ids = cls._user_transactions.get(user_id, [])
-        transactions = [cls._transactions[tid] for tid in transaction_ids if tid in cls._transactions]
-        logger.debug(f"Obtidas {len(transactions)} transações para o usuário {user_id}")
-        return transactions
     
     @classmethod
     def update_transaction(cls, transaction_id: str, api_data: Dict[str, Any]) -> Optional[Transaction]:

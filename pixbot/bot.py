@@ -44,8 +44,7 @@ class PixBot(Client):
         # Configura a lista de comandos que aparecerá no menu do bot
         commands = [
             BotCommand("start", "Iniciar o bot e ver menu principal"),
-            BotCommand("payment", "Gerar novo pagamento PIX"),
-            BotCommand("status", "Verificar status dos pagamentos recentes")
+            BotCommand("payment", "Gerar novo pagamento PIX")
         ]
         
         await self.set_bot_commands(commands)

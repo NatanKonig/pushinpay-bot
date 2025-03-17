@@ -1,6 +1,6 @@
 # Bot de Pagamentos PIX para Telegram
 
-Este projeto é um bot para Telegram que permite aos usuários gerar e gerenciar pagamentos via PIX diretamente através do chat. O bot é desenvolvido com Pyrogram e segue uma arquitetura modular baseada em princípios de Programação Orientada a Objetos (POO).
+Este projeto é um bot para Telegram que permite aos usuários gerar e gerenciar pagamentos via PIX diretamente através do chat. O bot é desenvolvido com Pyrogram/Kurigram e segue uma arquitetura modular baseada em princípios de Programação Orientada a Objetos (POO).
 
 ## Funcionalidades
 
@@ -39,7 +39,7 @@ Este projeto é um bot para Telegram que permite aos usuários gerar e gerenciar
 
 ## Requisitos
 
-* Python 3.8 ou superior
+* Python 3.10 ou superior
 * API ID e API Hash do Telegram (obtenha em [my.telegram.org](https://my.telegram.org))
 * Token de bot do Telegram (obtenha através do [@BotFather](https://t.me/BotFather))
 * Conta e token de API da [PushinPay](https://www.pushinpay.com.br/) para processar pagamentos PIX

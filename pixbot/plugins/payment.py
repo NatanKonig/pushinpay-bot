@@ -6,7 +6,17 @@ import asyncio
 
 from pixbot.logger import logger
 from pixbot.utils.payment_api import PaymentAPI
-from pixbot.utils.helpers import create_qr_code, format_payment_message, payment_status_message, create_payment_keyboard
+from pixbot.utils.helpers import create_qr_code, create_payment_keyboard
+from pixbot.utils.messages import (
+    PAYMENT_OPTIONS_MESSAGE, CUSTOM_AMOUNT_MESSAGE, PROCESSING_MESSAGE,
+    TIMEOUT_MESSAGE, INVALID_VALUE_MESSAGE, INVALID_FORMAT_MESSAGE,
+    ERROR_MESSAGE, PAYMENT_CANCELED_MESSAGE, QR_CODE_CAPTION,
+    format_payment_message, payment_status_message,
+    payment_details_keyboard, error_keyboard, custom_amount_keyboard,
+    retry_custom_amount_keyboard, payment_canceled_keyboard,
+    get_pending_payment_keyboard, get_completed_payment_keyboard,
+    get_failed_payment_keyboard
+)
 from pixbot.models.transaction import Transaction, TransactionManager
 from pixbot.bot import PixBot
 from convopyro import listen_message
@@ -41,10 +51,7 @@ async def process_payment(client: Client, callback_query: CallbackQuery):
         await callback_query.answer("Gerando pagamento, aguarde...")
         
         # Atualiza a mensagem para informar que está processando
-        await callback_query.message.edit_text(
-            "⏳ *Processando sua solicitação...*\n\n"
-            "Estamos gerando seu QR Code PIX, isso pode levar alguns segundos."
-        )
+        await callback_query.message.edit_text(PROCESSING_MESSAGE)
         
         try:
             # Gera o pagamento PIX
@@ -62,16 +69,12 @@ async def process_payment(client: Client, callback_query: CallbackQuery):
             )
             
             # Cria teclado com opções para o pagamento
-            keyboard = InlineKeyboardMarkup([
-                [InlineKeyboardButton("👁️ Ver QR Code", callback_data=f"show_qr:{transaction.id}")],
-                [InlineKeyboardButton("🔄 Verificar Pagamento", callback_data=f"check_payment:{transaction.id}")],
-                [InlineKeyboardButton("◀️ Voltar", callback_data="back_to_start")]
-            ])
+            keyboard = payment_details_keyboard(transaction.id)
             
             # Atualiza a mensagem com os detalhes do pagamento
             sent_message = await callback_query.message.edit_text(
                 message_text,
-                reply_markup=keyboard
+                reply_markup=keyboard,
             )
             
             # Atualiza o ID da mensagem na transação
@@ -82,13 +85,8 @@ async def process_payment(client: Client, callback_query: CallbackQuery):
             
             # Notifica o usuário sobre o erro
             await callback_query.message.edit_text(
-                f"❌ *Ocorreu um erro ao gerar o pagamento*\n\n"
-                f"Detalhes: {str(e)}\n\n"
-                f"Por favor, tente novamente mais tarde.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("🔄 Tentar Novamente", callback_data="show_payment_options")],
-                    [InlineKeyboardButton("◀️ Voltar ao Início", callback_data="back_to_start")]
-                ])
+                ERROR_MESSAGE.format(details=str(e)),
+                reply_markup=error_keyboard()
             )
     else:
         await callback_query.answer("Valor inválido")
@@ -105,8 +103,7 @@ async def show_payment_options_from_message(client: Client, message: Message):
     payment_keyboard = create_payment_keyboard()
     
     await message.reply(
-        "💰 *Selecione o valor do pagamento:*\n\n"
-        "Escolha um dos valores pré-definidos ou selecione 'Valor Personalizado' para inserir outro valor.",
+        PAYMENT_OPTIONS_MESSAGE,
         reply_markup=payment_keyboard
     )
     
@@ -121,15 +118,8 @@ async def request_custom_amount(client: Client, callback_query: CallbackQuery):
     
     # Informa ao usuário que estamos esperando o valor
     await callback_query.message.edit_text(
-        "💸 *Digite o valor desejado para o pagamento*\n\n"
-        "Por favor, envie o valor em reais. Exemplos:\n"
-        "- `15.90` para R$ 15,90\n"
-        "- `42` para R$ 42,00\n\n"
-        "📝 Envie apenas o número, sem símbolos ou letras.\n"
-        "Você tem 60 segundos para responder ou pode cancelar clicando abaixo.",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("❌ Cancelar", callback_data="cancel_payment")]
-        ])
+        CUSTOM_AMOUNT_MESSAGE,
+        reply_markup=custom_amount_keyboard()
     )
     
     # Responde ao callback query
@@ -156,20 +146,13 @@ async def request_custom_amount(client: Client, callback_query: CallbackQuery):
                 # Verifica se o valor é válido (maior que zero)
                 if value <= 0:
                     await response.reply(
-                        "❌ *Valor inválido*\n\n"
-                        "O valor deve ser maior que zero.",
-                        reply_markup=InlineKeyboardMarkup([
-                            [InlineKeyboardButton("🔄 Tentar Novamente", callback_data="payment:custom")],
-                            [InlineKeyboardButton("◀️ Voltar", callback_data="show_payment_options")]
-                        ])
+                        INVALID_VALUE_MESSAGE,
+                        reply_markup=retry_custom_amount_keyboard()
                     )
                     return
                 
                 # Notifica que está processando o pagamento
-                processing_msg = await response.reply(
-                    "⏳ *Processando sua solicitação...*\n\n"
-                    "Estamos gerando seu QR Code PIX, isso pode levar alguns segundos."
-                )
+                processing_msg = await response.reply(PROCESSING_MESSAGE)
                 
                 try:
                     # Gera o pagamento PIX
@@ -187,11 +170,7 @@ async def request_custom_amount(client: Client, callback_query: CallbackQuery):
                     )
                     
                     # Cria teclado com opções para o pagamento
-                    keyboard = InlineKeyboardMarkup([
-                        [InlineKeyboardButton("👁️ Ver QR Code", callback_data=f"show_qr:{transaction.id}")],
-                        [InlineKeyboardButton("🔄 Verificar Pagamento", callback_data=f"check_payment:{transaction.id}")],
-                        [InlineKeyboardButton("◀️ Voltar", callback_data="back_to_start")]
-                    ])
+                    keyboard = payment_details_keyboard(transaction.id)
                     
                     # Atualiza a mensagem com os detalhes do pagamento
                     sent_message = await processing_msg.edit_text(
@@ -207,45 +186,28 @@ async def request_custom_amount(client: Client, callback_query: CallbackQuery):
                     
                     # Notifica o usuário sobre o erro
                     await processing_msg.edit_text(
-                        f"❌ *Ocorreu um erro ao gerar o pagamento*\n\n"
-                        f"Detalhes: {str(e)}\n\n"
-                        f"Por favor, tente novamente mais tarde.",
-                        reply_markup=InlineKeyboardMarkup([
-                            [InlineKeyboardButton("🔄 Tentar Novamente", callback_data="payment:custom")],
-                            [InlineKeyboardButton("◀️ Voltar ao Início", callback_data="back_to_start")]
-                        ])
+                        ERROR_MESSAGE.format(details=str(e)),
+                        reply_markup=error_keyboard()
                     )
                     
             except ValueError:
                 # Valor não pôde ser convertido para float
                 await response.reply(
-                    "❌ *Valor inválido*\n\n"
-                    "Por favor, envie apenas números. Exemplos:\n"
-                    "- `15.90` para R$ 15,90\n"
-                    "- `42` para R$ 42,00",
-                    reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("🔄 Tentar Novamente", callback_data="payment:custom")],
-                        [InlineKeyboardButton("◀️ Voltar", callback_data="show_payment_options")]
-                    ])
+                    INVALID_FORMAT_MESSAGE,
+                    reply_markup=retry_custom_amount_keyboard()
                 )
     except asyncio.TimeoutError:
         # Se o tempo expirar, notifica o usuário
         await client.send_message(
             chat_id,
-            "⏰ *Tempo esgotado*\n\n"
-            "Você não enviou um valor dentro do tempo limite. "
-            "Por favor, inicie o processo novamente se ainda desejar fazer um pagamento.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔄 Tentar Novamente", callback_data="payment:custom")],
-                [InlineKeyboardButton("◀️ Voltar", callback_data="show_payment_options")]
-            ])
+            TIMEOUT_MESSAGE,
+            reply_markup=retry_custom_amount_keyboard()
         )
     except Exception as e:
         logger.error(f"Erro ao processar valor personalizado: {str(e)}")
         await client.send_message(
             chat_id,
-            f"❌ *Ocorreu um erro*\n\n"
-            f"Não foi possível processar sua solicitação. Por favor, tente novamente.",
+            ERROR_MESSAGE.format(details="Não foi possível processar sua solicitação."),
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("◀️ Voltar", callback_data="show_payment_options")]
             ])
@@ -267,26 +229,11 @@ async def cancel_payment_request(client: Client, callback_query: CallbackQuery):
         custom_amount_users.remove(user_id)
     
     await callback_query.message.edit_text(
-        "✅ *Solicitação cancelada*\n\n"
-        "O pagamento foi cancelado. O que deseja fazer agora?",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("💰 Novo Pagamento", callback_data="show_payment_options")],
-            [InlineKeyboardButton("◀️ Voltar ao Início", callback_data="back_to_start")]
-        ])
+        PAYMENT_CANCELED_MESSAGE,
+        reply_markup=payment_canceled_keyboard()
     )
     
     await callback_query.answer("Solicitação de pagamento cancelada")
-
-
-@PixBot.on_message((filters.private) & (filters.text) & (~filters.regex("^/")))
-async def handle_custom_amount(client: Client, message: Message):
-    """
-    Manipulador genérico para mensagens de texto que não são comandos
-    Mantido apenas para compatibilidade, mas não faz nada específico
-    já que estamos usando o convopyro para conversas
-    """
-    # Este handler está vazio, usamos convopyro.listen para gerenciar as entradas do usuário
-    pass
 
 
 @PixBot.on_callback_query(filters.regex(r"^show_qr:(.+)$"))
@@ -312,75 +259,12 @@ async def show_qr_code(client: Client, callback_query: CallbackQuery):
             await client.send_photo(
                 chat_id=callback_query.message.chat.id,
                 photo=qr_image,
-                caption=f"🔍 *QR Code PIX*\n\nValor: R$ {transaction.amount:.2f}\n\n"
-                        f"Escaneie com seu aplicativo bancário para efetuar o pagamento.",
+                caption=QR_CODE_CAPTION.format(amount=transaction.amount),
             )
         else:
             await callback_query.answer("Transação não encontrada", show_alert=True)
     else:
         await callback_query.answer("Dados inválidos", show_alert=True)
-
-
-@PixBot.on_message(filters.command("status") & filters.private)
-async def status_command(client: Client, message: Message):
-    """
-    Exibe os pagamentos recentes do usuário
-    """
-    user_id = message.from_user.id
-    
-    # Busca as transações do usuário
-    transactions = TransactionManager.get_user_transactions(user_id)
-    
-    if not transactions:
-        await message.reply(
-            "📋 *Histórico de Pagamentos*\n\n"
-            "Você ainda não realizou nenhum pagamento.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("💰 Novo Pagamento", callback_data="show_payment_options")]
-            ])
-        )
-        return
-    
-    # Ordena as transações por data (mais recentes primeiro)
-    transactions.sort(key=lambda t: t.created_at, reverse=True)
-    
-    # Limita a exibir apenas as 5 transações mais recentes
-    recent_transactions = transactions[:5]
-    
-    # Cria a mensagem com o histórico de transações
-    message_text = "📋 *Suas Transações Recentes*\n\n"
-    
-    for i, transaction in enumerate(recent_transactions, 1):
-        # Formata a data
-        date_str = transaction.created_at.strftime("%d/%m/%Y %H:%M")
-        
-        # Adiciona a transação à mensagem
-        message_text += (
-            f"*{i}. Pagamento de R$ {transaction.amount:.2f}*\n"
-            f"Status: {payment_status_message(transaction.status).split('*')[1]}\n"
-            f"Data: {date_str}\n"
-            f"ID: `{transaction.id}`\n\n"
-        )
-    
-    # Cria os botões para verificação individual
-    buttons = []
-    for transaction in recent_transactions:
-        buttons.append([
-            InlineKeyboardButton(
-                f"Verificar R$ {transaction.amount:.2f} ({transaction.status})",
-                callback_data=f"check_payment:{transaction.id}"
-            )
-        ])
-    
-    buttons.append([InlineKeyboardButton("💰 Novo Pagamento", callback_data="show_payment_options")])
-    buttons.append([InlineKeyboardButton("◀️ Voltar ao Início", callback_data="back_to_start")])
-    
-    keyboard = InlineKeyboardMarkup(buttons)
-    
-    await message.reply(
-        message_text,
-        reply_markup=keyboard
-    )
 
 
 @PixBot.on_callback_query(filters.regex(r"^check_payment:(.+)$"))
@@ -411,32 +295,22 @@ async def check_payment(client: Client, callback_query: CallbackQuery):
                     status_msg = payment_status_message(updated_transaction.status)
                     
                     # Determina os botões com base no status
-                    buttons = []
+                    keyboard = None
                     
                     if updated_transaction.is_paid():
-                        buttons = [
-                            [InlineKeyboardButton("🏠 Voltar ao Início", callback_data="back_to_start")]
-                        ]
+                        keyboard = get_completed_payment_keyboard()
                     elif updated_transaction.is_pending():
-                        buttons = [
-                            [InlineKeyboardButton("👁️ Ver QR Code", callback_data=f"show_qr:{transaction_id}")],
-                            [InlineKeyboardButton("🔄 Verificar Novamente", callback_data=f"check_payment:{transaction_id}")],
-                            [InlineKeyboardButton("◀️ Voltar", callback_data="back_to_start")]
-                        ]
+                        keyboard = get_pending_payment_keyboard(transaction_id)
                     else:
-                        buttons = [
-                            [InlineKeyboardButton("💰 Novo Pagamento", callback_data="show_payment_options")],
-                            [InlineKeyboardButton("◀️ Voltar", callback_data="back_to_start")]
-                        ]
-                    
-                    keyboard = InlineKeyboardMarkup(buttons)
+                        keyboard = get_failed_payment_keyboard()
                     
                     # Atualiza a mensagem com o status atual
                     await callback_query.message.edit_text(
-                        f"🧾 *Detalhes do pagamento:*\n\n"
-                        f"💰 *Valor:* R$ {updated_transaction.amount:.2f}\n\n"
-                        f"{status_msg}\n\n"
-                        f"ID da transação: `{transaction_id}`",
+                        text=format_payment_message(
+                            value=updated_transaction.amount,
+                            qr_code="", # Removido propositalmente para mostrar apenas o status
+                            transaction_id=transaction_id
+                        ).split("📲")[0] + f"\n{status_msg}\n\nID da transação: `{transaction_id}`",
                         reply_markup=keyboard
                     )
                 else:

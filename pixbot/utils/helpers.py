@@ -9,6 +9,7 @@ from pyrogram import enums
 
 from pixbot.logger import logger
 from pixbot.settings import Settings
+from pixbot.utils.messages import format_payment_message, payment_status_message  # Importando das mensagens
 
 settings = Settings()
 
@@ -77,59 +78,3 @@ def create_payment_keyboard() -> InlineKeyboardMarkup:
     ])
     
     return InlineKeyboardMarkup(buttons)
-
-
-def format_payment_message(value: float, qr_code: str, transaction_id: str) -> str:
-    """
-    Formata a mensagem de pagamento PIX
-    
-    Args:
-        value: Valor do pagamento
-        qr_code: Código PIX copia e cola
-        transaction_id: ID da transação
-        
-    Returns:
-        Mensagem formatada
-    """
-    return (
-        f"🧾 *Detalhes do pagamento:*\n\n"
-        f"💰 *Valor:* R$ {value:.2f}\n\n"
-        f"📲 *Chave Copia e Cola:*\n"
-        f"`{qr_code}`\n\n"
-        f"👉 Você também pode visualizar o QR Code e escanear com seu aplicativo bancário.\n\n"
-        f"ID da transação: `{transaction_id}`"
-    )
-
-
-def payment_status_message(status: str) -> str:
-    """
-    Retorna a mensagem correspondente ao status do pagamento
-    
-    Args:
-        status: Status do pagamento
-        
-    Returns:
-        Mensagem formatada
-    """
-    status_messages = {
-        "pending": "⏳ *Aguardando pagamento*\nO pagamento ainda não foi confirmado.",
-        "paid": "✅ *Pagamento confirmado!*\nObrigado por utilizar nosso serviço.",
-        "expired": "⌛ *Pagamento expirado*\nO tempo para pagamento expirou.",
-        "canceled": "❌ *Pagamento cancelado*\nEsta transação foi cancelada.",
-        "failed": "⚠️ *Falha no pagamento*\nOcorreu um erro durante o processamento."
-    }
-    
-    return status_messages.get(status, f"Status desconhecido: {status}")
-
-
-def is_admin(user_id: int) -> bool:
-    """
-    Verifica se o usuário é um administrador do bot
-    
-    Args:
-        user_id: ID do usuário
-    
-    Returns:
-        True se for admin, False caso contrário
-    """
-    return user_id in settings.admin_ids
