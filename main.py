@@ -1,15 +1,16 @@
 """
 Ponto de entrada principal do bot
 """
-import asyncio
-import traceback
-import os
 
-from pixbot.logger import logger
+import asyncio
+import os
+import traceback
+
 from pixbot.bot import main
+from pixbot.logger import logger
 
 if __name__ == "__main__":
-    try:        
+    try:
         logger.success("Bot de Pagamentos PIX iniciando...")
         asyncio.run(main())
     except Exception as e:

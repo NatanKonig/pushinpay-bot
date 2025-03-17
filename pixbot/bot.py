@@ -2,9 +2,9 @@ import asyncio
 import traceback
 
 import uvloop
-from pyrogram import Client, idle, enums
-from pyrogram.types import BotCommand
 from convopyro import Conversation
+from pyrogram import Client, enums, idle
+from pyrogram.types import BotCommand
 
 from pixbot.logger import logger
 from pixbot.settings import Settings
@@ -18,7 +18,7 @@ class PixBot(Client):
     Classe principal do bot de pagamentos PIX
     Herda da classe Client do Pyrogram
     """
-    
+
     def __init__(self):
         self.settings = Settings()
         super().__init__(
@@ -36,17 +36,17 @@ class PixBot(Client):
         """Inicializa o bot e configura comandos"""
         # Configura o parser para usar o modo DEFAULT (combina Markdown e HTML)
         self.set_parse_mode(enums.ParseMode.DEFAULT)
-        
+
         await super().start()
         self.me = await self.get_me()
         logger.info(f"Bot iniciado: @{self.me.username} ({self.me.id})")
-        
+
         # Configura a lista de comandos que aparecerá no menu do bot
         commands = [
             BotCommand("start", "Iniciar o bot e ver menu principal"),
-            BotCommand("payment", "Gerar novo pagamento PIX")
+            BotCommand("payment", "Gerar novo pagamento PIX"),
         ]
-        
+
         await self.set_bot_commands(commands)
         logger.info("Comandos do bot configurados")
 
@@ -56,7 +56,7 @@ async def main():
         bot = PixBot()
         # Inicializa a biblioteca de conversas
         Conversation(bot)
-        
+
         # Inicia o bot
         await bot.start()
         logger.info("Bot está em execução. Pressione CTRL+C para sair.")
@@ -65,7 +65,7 @@ async def main():
         logger.error(f"Erro ao iniciar o bot: {str(e)}")
         traceback.print_exc()
     finally:
-        if 'bot' in locals() and hasattr(bot, 'is_connected') and bot.is_connected:
+        if "bot" in locals() and hasattr(bot, "is_connected") and bot.is_connected:
             await bot.stop()
             logger.info("Bot parou de executar")
 

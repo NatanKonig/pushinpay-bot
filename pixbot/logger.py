@@ -20,20 +20,22 @@ class InterceptHandler(logging.Handler):
             depth += 1
 
         # Filtra logs indesejados do Pyrogram
-        if 'pyrogram' in record.name.lower() and record.levelname == 'INFO':
+        if "pyrogram" in record.name.lower() and record.levelname == "INFO":
             # Apenas permite logs específicos do Pyrogram
             allowed_messages = [
                 "Bot iniciado:",
                 "Bot está em execução",
                 "Bot parou",
-                "Comandos do bot configurados"
+                "Comandos do bot configurados",
             ]
-            
+
             # Verifica se a mensagem contém algum texto permitido
-            should_log = any(allowed in record.getMessage() for allowed in allowed_messages)
+            should_log = any(
+                allowed in record.getMessage() for allowed in allowed_messages
+            )
             if not should_log:
                 return  # Ignora mensagens que não são necessárias
-        
+
         loguru_logger.opt(depth=depth, exception=record.exc_info).log(
             level, record.getMessage()
         )
@@ -48,7 +50,8 @@ loguru_logger.add(
     format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan> - <level>{message}</level>",
     level="INFO",
     colorize=True,
-    filter=lambda record: "pyrogram.session" not in record["name"]  # Filtra logs de sessão
+    filter=lambda record: "pyrogram.session"
+    not in record["name"],  # Filtra logs de sessão
 )
 
 # Adiciona saída para arquivo com rotação

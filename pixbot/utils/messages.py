@@ -1,9 +1,10 @@
 """
 Mensagens padronizadas e templates para uso no bot
 """
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# Mensagens principais (padronizadas para usar * para destaque)
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+# Mensagens principais
 WELCOME_MESSAGE = """
 👋 **Bem-vindo ao Bot de Pagamentos PIX!**
 
@@ -111,12 +112,13 @@ Escaneie com seu aplicativo bancário para efetuar o pagamento.
 PAYMENT_DETAILS_MESSAGE = """
 🧾 **Detalhes do pagamento:**
 
-💰 *Valor:* R$ {amount:.2f}
+💰 **Valor:** R$ {amount:.2f}
 
 {status_msg}
 
 ID da transação: `{transaction_id}`
 """
+
 
 # Status de pagamento
 def payment_status_message(status: str) -> str:
@@ -124,14 +126,16 @@ def payment_status_message(status: str) -> str:
     Retorna a mensagem correspondente ao status do pagamento
     """
     status_messages = {
+        "created": "⏳ **Aguardando pagamento**\nO pagamento ainda não foi confirmado.",
         "pending": "⏳ **Aguardando pagamento**\nO pagamento ainda não foi confirmado.",
         "paid": "✅ **Pagamento confirmado!**\nObrigado por utilizar nosso serviço.",
         "expired": "⌛ **Pagamento expirado**\nO tempo para pagamento expirou.",
         "canceled": "❌ **Pagamento cancelado**\nEsta transação foi cancelada.",
-        "failed": "⚠️ **Falha no pagamento**\nOcorreu um erro durante o processamento."
+        "failed": "⚠️ **Falha no pagamento**\nOcorreu um erro durante o processamento.",
     }
-    
+
     return status_messages.get(status, f"Status desconhecido: {status}")
+
 
 def format_payment_message(value: float, qr_code: str, transaction_id: str) -> str:
     """
@@ -147,82 +151,140 @@ def format_payment_message(value: float, qr_code: str, transaction_id: str) -> s
             f"ID da transação: `{transaction_id}`"
         )
     else:
-        return (
-            f"🧾 **Detalhes do pagamento:**\n\n"
-            f"💰 **Valor:** R$ {value:.2f}\n\n"
-        )
+        return f"🧾 **Detalhes do pagamento:**\n\n" f"💰 **Valor:** R$ {value:.2f}\n\n"
+
 
 # Teclados comuns
 def main_menu_keyboard() -> InlineKeyboardMarkup:
     """Retorna o teclado do menu principal"""
-    return InlineKeyboardMarkup([
+    return InlineKeyboardMarkup(
         [
-            InlineKeyboardButton("💰 Gerar Pagamento", callback_data="show_payment_options")
-        ],
-        [
-            InlineKeyboardButton("❓ Ajuda", callback_data="help"),
-            InlineKeyboardButton("ℹ️ Sobre", callback_data="about")
+            [
+                InlineKeyboardButton(
+                    "💰 Gerar Pagamento", callback_data="show_payment_options"
+                )
+            ],
+            [
+                InlineKeyboardButton("❓ Ajuda", callback_data="help"),
+                InlineKeyboardButton("ℹ️ Sobre", callback_data="about"),
+            ],
         ]
-    ])
+    )
+
 
 def payment_details_keyboard(transaction_id: str) -> InlineKeyboardMarkup:
     """Retorna o teclado para detalhes do pagamento"""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("👁️ Ver QR Code", callback_data=f"show_qr:{transaction_id}")],
-        [InlineKeyboardButton("🔄 Verificar Pagamento", callback_data=f"check_payment:{transaction_id}")],
-        [InlineKeyboardButton("◀️ Voltar", callback_data="back_to_start")]
-    ])
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "👁️ Ver QR Code", callback_data=f"show_qr:{transaction_id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "🔄 Verificar Pagamento",
+                    callback_data=f"check_payment:{transaction_id}",
+                )
+            ],
+        ]
+    )
+
 
 def error_keyboard() -> InlineKeyboardMarkup:
     """Retorna o teclado para mensagens de erro"""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔄 Tentar Novamente", callback_data="show_payment_options")],
-        [InlineKeyboardButton("◀️ Voltar ao Início", callback_data="back_to_start")]
-    ])
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "🔄 Tentar Novamente", callback_data="show_payment_options"
+                )
+            ]
+        ]
+    )
+
 
 def custom_amount_keyboard() -> InlineKeyboardMarkup:
     """Retorna o teclado para entrada de valor personalizado"""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("❌ Cancelar", callback_data="cancel_payment")]
-    ])
+    return InlineKeyboardMarkup(
+        [[InlineKeyboardButton("❌ Cancelar", callback_data="cancel_payment")]]
+    )
+
 
 def retry_custom_amount_keyboard() -> InlineKeyboardMarkup:
     """Retorna o teclado para tentar novamente o valor personalizado"""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔄 Tentar Novamente", callback_data="payment:custom")],
-        [InlineKeyboardButton("◀️ Voltar", callback_data="show_payment_options")]
-    ])
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "🔄 Tentar Novamente", callback_data="payment:custom"
+                )
+            ],
+            [InlineKeyboardButton("◀️ Voltar", callback_data="show_payment_options")],
+        ]
+    )
+
 
 def payment_canceled_keyboard() -> InlineKeyboardMarkup:
     """Retorna o teclado para quando o pagamento é cancelado"""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("💰 Novo Pagamento", callback_data="show_payment_options")],
-        [InlineKeyboardButton("◀️ Voltar ao Início", callback_data="back_to_start")]
-    ])
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "💰 Novo Pagamento", callback_data="show_payment_options"
+                )
+            ]
+        ]
+    )
+
 
 def get_pending_payment_keyboard(transaction_id: str) -> InlineKeyboardMarkup:
     """Retorna o teclado para pagamentos pendentes"""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("👁️ Ver QR Code", callback_data=f"show_qr:{transaction_id}")],
-        [InlineKeyboardButton("🔄 Verificar Novamente", callback_data=f"check_payment:{transaction_id}")],
-        [InlineKeyboardButton("◀️ Voltar", callback_data="back_to_start")]
-    ])
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "📝 Ver Código PIX", callback_data=f"back_to_pix:{transaction_id}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "🔄 Verificar Novamente",
+                    callback_data=f"check_payment:{transaction_id}",
+                )
+            ],
+        ]
+    )
 
-def get_completed_payment_keyboard() -> InlineKeyboardMarkup:
+
+def get_completed_payment_keyboard(transaction_id: str) -> InlineKeyboardMarkup:
     """Retorna o teclado para pagamentos concluídos"""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🏠 Voltar ao Início", callback_data="back_to_start")]
-    ])
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "📝 Ver Código PIX", callback_data=f"back_to_pix:{transaction_id}"
+                )
+            ]
+        ]
+    )
 
-def get_failed_payment_keyboard() -> InlineKeyboardMarkup:
+
+def get_failed_payment_keyboard(transaction_id: str) -> InlineKeyboardMarkup:
     """Retorna o teclado para pagamentos que falharam"""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("💰 Novo Pagamento", callback_data="show_payment_options")],
-        [InlineKeyboardButton("◀️ Voltar", callback_data="back_to_start")]
-    ])
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "📝 Ver Código PIX", callback_data=f"back_to_pix:{transaction_id}"
+                )
+            ]
+        ]
+    )
+
 
 def back_button_keyboard() -> InlineKeyboardMarkup:
     """Retorna um teclado com apenas o botão de voltar"""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("◀️ Voltar", callback_data="back_to_start")]
-    ])
+    return InlineKeyboardMarkup(
+        [[InlineKeyboardButton("◀️ Voltar", callback_data="back_to_start")]]
+    )

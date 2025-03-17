@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     api_id: int
     api_hash: str
     admin_ids: list[int] | int
-    
+
     # Configurações da API de Pagamentos PIX
     pix_api_url: str = "https://api.pushinpay.com.br/api/pix/cashIn"
     pix_status_url: str = "https://api.pushinpay.com.br/api/transactions/"
@@ -19,10 +19,10 @@ class Settings(BaseSettings):
 
     # Configurações do webhook para receber notificações de pagamento (opcional)
     webhook_url: str = ""
-    
+
     # Valores pré-definidos para pagamentos (em reais)
     payment_values: list[float] = [5, 10, 20, 50, 100]
-    
+
     # Configurações de logs
     log_level: str = "INFO"
 
@@ -49,7 +49,7 @@ class Settings(BaseSettings):
         elif isinstance(value, int):
             return [value]
         return value
-        
+
     @field_validator("payment_values", mode="before")
     def parse_payment_values(cls, value):
         if isinstance(value, str):
