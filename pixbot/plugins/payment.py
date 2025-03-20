@@ -15,6 +15,8 @@ from pixbot.bot import PixBot
 from pixbot.logger import logger
 from pixbot.models.transaction import Transaction, TransactionManager
 from pixbot.utils.helpers import create_payment_keyboard, create_qr_code
+from pixbot.utils.messages import LIMIT_EXCEEDED_MESSAGE  # Nova mensagem importada
+from pixbot.utils.messages import limit_exceeded_keyboard  # Novo teclado importado
 from pixbot.utils.messages import (
     CUSTOM_AMOUNT_MESSAGE,
     ERROR_MESSAGE,
@@ -31,7 +33,10 @@ from pixbot.utils.messages import (
     payment_details_keyboard,
     retry_custom_amount_keyboard,
 )
-from pixbot.utils.payment_api import PaymentAPI
+from pixbot.utils.payment_api import (
+    PaymentAPI,  # Nova exceção importada
+    PIXValueExceededError,
+)
 
 # Estado para capturar valores personalizados
 custom_amount_users = set()
@@ -91,6 +96,17 @@ async def process_payment(client: Client, callback_query: CallbackQuery):
 
             # Atualiza o ID da mensagem na transação
             transaction.message_id = sent_message.id
+
+        except PIXValueExceededError as e:
+            logger.warning(
+                f"Valor excedido para pagamento: R$ {value:.2f}, limite: R$ {e.limit:.2f}"
+            )
+
+            # Notifica o usuário sobre o limite
+            await callback_query.message.edit_text(
+                LIMIT_EXCEEDED_MESSAGE.format(limit=e.limit),
+                reply_markup=limit_exceeded_keyboard(),
+            )
 
         except Exception as e:
             logger.error(f"Erro ao gerar pagamento: {str(e)}")
@@ -185,6 +201,20 @@ async def request_custom_amount(client: Client, callback_query: CallbackQuery):
 
                     # Atualiza o ID da mensagem na transação
                     transaction.message_id = sent_message.id
+
+                except PIXValueExceededError as e:
+                    logger.warning(
+                        f"Valor excedido para pagamento: R$ {value:.2f}, limite: R$ {e.limit:.2f}"
+                    )
+
+                    # Teclado para tentar novamente com valor menor
+                    keyboard = limit_exceeded_keyboard()
+
+                    # Notifica o usuário sobre o limite
+                    await processing_msg.edit_text(
+                        LIMIT_EXCEEDED_MESSAGE.format(limit=e.limit),
+                        reply_markup=keyboard,
+                    )
 
                 except Exception as e:
                     logger.error(f"Erro ao gerar pagamento: {str(e)}")

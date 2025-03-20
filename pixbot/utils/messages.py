@@ -95,6 +95,13 @@ ERROR_MESSAGE = """
 Por favor, tente novamente mais tarde.
 """
 
+LIMIT_EXCEEDED_MESSAGE = """
+⚠️ **Valor excede o limite permitido**
+
+O valor máximo permitido para pagamento PIX é de R$ {limit:.2f}.
+Por favor, tente novamente com um valor menor.
+"""
+
 PAYMENT_CANCELED_MESSAGE = """
 ✅ **Solicitação cancelada**
 
@@ -287,4 +294,17 @@ def back_button_keyboard() -> InlineKeyboardMarkup:
     """Retorna um teclado com apenas o botão de voltar"""
     return InlineKeyboardMarkup(
         [[InlineKeyboardButton("◀️ Voltar", callback_data="back_to_start")]]
+    )
+
+
+def limit_exceeded_keyboard() -> InlineKeyboardMarkup:
+    """Retorna o teclado para quando o valor excede o limite permitido"""
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "💰 Tentar com valor menor", callback_data="show_payment_options"
+                )
+            ]
+        ]
     )
