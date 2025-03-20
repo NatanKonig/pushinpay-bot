@@ -39,7 +39,7 @@ Este projeto é um bot para Telegram que permite aos usuários gerar e gerenciar
 
 ## Requisitos
 
-* Python 3.10 ou superior
+* Python 3.12 ou superior
 * API ID e API Hash do Telegram (obtenha em [my.telegram.org](https://my.telegram.org))
 * Token de bot do Telegram (obtenha através do [@BotFather](https://t.me/BotFather))
 * Conta e token de API da [PushinPay](https://www.pushinpay.com.br/) para processar pagamentos PIX

@@ -1,0 +1,6 @@
+services:
+  app:
+    image: ${DOCKER_USERNAME}/pushinpaybot:${IMAGE_TAG}
+    container_name: pushinpaybot
+    env_file:
+      - .env
