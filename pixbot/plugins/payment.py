@@ -33,10 +33,8 @@ from pixbot.utils.messages import (
     payment_details_keyboard,
     retry_custom_amount_keyboard,
 )
-from pixbot.utils.payment_api import (
-    PaymentAPI,  # Nova exceção importada
-    PIXValueExceededError,
-)
+from pixbot.utils.payment_api import PaymentAPI  # Nova exceção importada
+from pixbot.utils.payment_api import PIXValueExceededError
 
 # Estado para capturar valores personalizados
 custom_amount_users = set()

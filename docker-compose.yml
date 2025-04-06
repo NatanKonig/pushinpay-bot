@@ -4,3 +4,6 @@ services:
     container_name: pushinpaybot
     env_file:
       - .env
+    volumes:
+      - ./sessions/:/app/sessions/
+      - ./logs/:/app/logs/
